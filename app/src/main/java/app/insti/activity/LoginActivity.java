@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
@@ -33,6 +34,7 @@ public class LoginActivity extends AppCompatActivity {
     private final String redirectUri = "https://www.insti.app/login-android.html";
     private final String guestUri = "https://guesturi";
     private final String loginUri = "https://loginuri";
+    private final String googleUri = "https://googlelogin";
     public String authCode = null;
     public String fcmId = null;
     private SessionManager session;
@@ -102,8 +104,13 @@ public class LoginActivity extends AppCompatActivity {
                 if (!progressDialog.isShowing()) {
                     progressDialog.show();
                 }
-                /* Perform the login */
-                login(authCode, redirectUri);
+
+                if (data.contains("www.googleapis.com") && data.startsWith("instiapp://insti.app/login")) {
+                    glogin(authCode, redirectUri);
+                } else {
+                    /* Perform the login */
+                    login(authCode, redirectUri);
+                }
             } else {
                 Toast.makeText(this, "Login Failed!", Toast.LENGTH_SHORT).show();
             }
@@ -141,6 +148,28 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
+    private void glogin(final String authorizationCode, final String redirectURL) {
+        /* This can be null if play services is hung */
+        RetrofitInterface retrofitInterface = getRetrofitInterface();
+        Call<LoginResponse> call;
+        call = retrofitInterface.glogin(authorizationCode, redirectURL);
+
+        call.enqueue(new EmptyCallback<LoginResponse>() {
+            @Override
+            public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
+                if (response.isSuccessful()) {
+                    session.createLoginSession(response.body().getUser().getUserName(), response.body().getUser(), response.body().getSessionID());
+                    progressDialog.dismiss();
+                    openMainActivity();
+                    finish();
+                } else {
+                    Toast.makeText(LoginActivity.this, "Authorization Failed!", Toast.LENGTH_LONG).show();
+                    progressDialog.dismiss();
+                }
+            }
+        });
+    }
+
     private class WvClient extends WebViewClient {
         @Override
         public boolean shouldOverrideUrlLoading(final WebView view, final String url) {
@@ -160,6 +189,20 @@ public class LoginActivity extends AppCompatActivity {
             if (url.startsWith(guestUri)) {
                 Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                 startActivity(intent);
+                return true;
+            }
+
+            /* Google login button */
+            if (url.startsWith(googleUri)) {
+                String clint_id = getString(R.string.server_client_id);
+                String uri = "https://accounts.google.com/o/oauth2/v2/auth?client_id=" + clint_id + "&response_type=code&scope=https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile openid&redirect_uri=https://www.insti.app/login-android.html&prompt=consent";
+                CustomTabsIntent customTabsIntent = new CustomTabsIntent.Builder()
+                        .addDefaultShareMenuItem()
+                        .setToolbarColor(LoginActivity.this.getResources()
+                                .getColor(R.color.colorPrimary))
+                        .setShowTitle(true)
+                        .build();
+                customTabsIntent.launchUrl(LoginActivity.this, Uri.parse(uri));
                 return true;
             }
 

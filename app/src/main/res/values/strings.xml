@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name">InstiApp</string>
 
+    <string name="server_client_id">283642720122-426e6bgmqi7hbh6pf1q2jjsbee4o2lh1.apps.googleusercontent.com</string>
+
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
 

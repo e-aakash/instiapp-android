@@ -46,6 +46,9 @@ public interface RetrofitInterface {
     @GET("login")
     Call<LoginResponse> login(@Query("code") String AUTH_CODE, @Query("redir") String redirectURI);
 
+    @GET("g-login")
+    Call<LoginResponse> glogin(@Query("code") String AUTH_CODE, @Query("redir") String redirectURI);
+
     @GET("pass-login")
     Call<LoginResponse> passwordLogin(@Query("username") String username, @Query("password") String password);
 
